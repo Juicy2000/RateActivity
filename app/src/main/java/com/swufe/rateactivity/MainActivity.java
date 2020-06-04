@@ -2,7 +2,9 @@ package com.swufe.rateactivity;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.app.Activity;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
@@ -22,10 +24,28 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        SharedPreferences sharedPreferences = getSharedPreferences("myrate", Activity.MODE_PRIVATE);
+
+        dollarRate = sharedPreferences.getFloat("dollar_rate",0.0f);
+        euroRate = sharedPreferences.getFloat("euro_rate",0.0f);
+        wonRate = sharedPreferences.getFloat("won_rate",0.0f);
+
+        Log.i(TAG, "onCreate: sp dollarRate=" + dollarRate);
+        Log.i(TAG, "onCreate: sp euroRate=" + euroRate);
+        Log.i(TAG, "onCreate: sp wonRate=" + wonRate);
+        //将新设置的汇率写到SP里
+        SharedPreferences sharedPreferences1 = getSharedPreferences("myrate", Activity.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putFloat("dollar_rate",dollarRate);
+        editor.putFloat("euro_rate",euroRate);
+        editor.putFloat("won_rate",wonRate);
+        editor.commit();
+        Log.i(TAG, "onActivityResult: 数据已保存到sharedPreferences");
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         rmb = (EditText) findViewById(R.id.rmb);
         show = (TextView) findViewById(R.id.show);
+
         Log.i(TAG, "onClick: ");
         String str = rmb.getText().toString();
         Log.i(TAG, "onClick: get str=" + str);
