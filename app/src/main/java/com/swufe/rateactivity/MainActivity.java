@@ -13,7 +13,9 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.EditText;
+import android.widget.ListAdapter;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -26,8 +28,10 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
     private final String TAG = "Rate";
@@ -223,19 +227,23 @@ public class MainActivity extends AppCompatActivity {
             msg.obj = "Hello from run()";
             handler.sendMessage(msg);
         }
+        private String[] list_data = {"one","tow","three","four"};
+        int msgWhat = 3;
         Handler handler;
+        ListAdapter adapter = new ArrayAdapter<>(RateActivity.this,android.R.layout.simple_list_item_1,list_data);
+        setListadapter(adapter);
         //开启子线程
         handler = new Handler(){
-            @Override
             public void handleMessage(Message msg) {
-                if(msg.what==5){
-                    String str = (String) msg.obj;
-                    Log.i(TAG, "handleMessage: getMessage msg = " + str);
-                    show.setText(str);
+                if(msg.what == 5){
+                    List<String> retList = (List<String>) msg.obj;
+                    ListAdapter adapter = new ArrayAdapter<String>(RateListActivity.this,android.R.layout.simple_list_item_1,retList);
+                    setListAdapter(adapter);
+                    Log.i("handler","reset list...");
                 }
                 super.handleMessage(msg);
             }
-        }
+        };
         Thread t = new Thread(this);
         t.start();
 
@@ -257,6 +265,42 @@ public class MainActivity extends AppCompatActivity {
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.rate,menu);
         return true;
+    }
+    @Override
+    public void run() {
+        Log.i("thread","run.....");
+        List<String> rateList = new ArrayList<>();
+        try {
+            Document doc = Jsoup.connect("http://www.usd-cny.com/icbc.htm").get();
+
+            Element tbs = doc.getElementsByClass("tableDataTable");
+            Element table = tbs.get(0);
+
+            Element tds = table.getElementsByTag("td");
+            for (int i = 0; i < tds.size(); i+=5) {
+                Element td = tds.get(i);
+                Element td2 = tds.get(i+3);
+
+                String tdStr = td.text();
+                String pStr = td2.text();
+                rateList.add(tdStr + "=>" + pStr);
+
+                Log.i("td",tdStr + "=>" + pStr);
+            }
+        } catch (MalformedURLException e) {
+            Log.e("www", e.toString());
+            e.printStackTrace();
+        } catch (IOException e) {
+            Log.e("www", e.toString());
+            e.printStackTrace();
+        }
+
+        Message msg = handler.obtainMessage(5);
+
+        msg.obj = rateList;
+        handler.sendMessage(msg);
+
+        Log.i("thread","sendMessage.....");
     }
 
     @Override
