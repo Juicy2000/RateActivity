@@ -25,6 +25,9 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
 
 public class MainActivity extends AppCompatActivity {
     private final String TAG = "Rate";
@@ -62,6 +65,32 @@ public class MainActivity extends AppCompatActivity {
         Log.i(TAG, "onClick: ");
         String str = rmb.getText().toString();
         Log.i(TAG, "onClick: get str=" + str);
+        String updateDate = sharedPreferences.getString("update_date","");
+
+//获取当前系统时间
+        Date today = Calendar.getInstance().getTime();
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        final String todayStr = sdf.format(today);
+        Log.i(TAG, "onCreate: sp updateDate=" + updateDate);
+        Log.i(TAG, "onCreate: todayStr=" + todayStr);
+
+//判断时间
+        if(!todayStr.equals(updateDate)){
+            Log.i(TAG, "onCreate: 需要更新");
+            //开启子线程
+            Thread t = new Thread(this);
+            t.start();
+        }else{
+            Log.i(TAG, "onCreate: 不需要更新");
+        }
+        //保存更新的日期
+        SharedPreferences sp = getSharedPreferences("myrate", Activity.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sp.edit();
+        editor.putFloat("dollar_rate",dollarRate);
+        editor.putFloat("euro_rate",euroRate);
+        editor.putFloat("won_rate",wonRate);
+        editor.putString("update_date",todayStr);
+        editor.apply();
 
         float r = 0;
         if(str.length()>0){
@@ -82,6 +111,7 @@ public class MainActivity extends AppCompatActivity {
             show.setText(String.valueOf(r*wonRate));
         }
     }
+
 
     public class RateActivity extends AppCompatActivity implements Runnable{
         private String inputStream2String(InputStream inputStream) throws IOException {
