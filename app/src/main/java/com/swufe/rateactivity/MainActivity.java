@@ -16,6 +16,7 @@ import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.ListAdapter;
+import android.widget.SimpleAdapter;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -31,6 +32,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
@@ -134,6 +136,91 @@ public class MainActivity extends AppCompatActivity {
 
         public void run() {
             Log.i(TAG, "run: run()......");
+            public void run() {
+                Log.i("thread","run.....");
+                boolean marker = false;
+                List<HashMap<String, String>> rateList = new ArrayList<HashMap<String, String>>();
+
+                try {
+                    Document doc = Jsoup.connect("http://www.usd-cny.com/icbc.htm").get();
+                    Element tbs = doc.getElementsByClass("tableDataTable");
+                    Element table = tbs.get(0);
+                    Element tds = table.getElementsByTag("td");
+                    for (int i = 6; i < tds.size(); i+=6) {
+                        Element td = tds.get(i);
+                        Element td2 = tds.get(i+3);
+                        String tdStr = td.text();
+                        String pStr = td2.text();
+
+                        HashMap<String, String> map = new HashMap<String, String>();
+                        map.put("ItemTitle", tdStr);
+                        map.put("ItemDetail", pStr);
+
+                        rateList.add(map);
+                        Log.i("td",tdStr + "=>" + pStr);
+                    }
+                    marker = true;
+                } catch (MalformedURLException e) {
+                    Log.e("www", e.toString());
+                    e.printStackTrace();
+                } catch (IOException e) {
+                    Log.e("www", e.toString());
+                    e.printStackTrace();
+                }
+
+                Message msg = handler.obtainMessage();
+                msg.what = msgWhat;
+                if(marker){
+                    msg.arg1 = 1;
+                }else{
+                    msg.arg1 = 0;
+                }
+
+                msg.obj = rateList;
+                handler.sendMessage(msg);
+
+                Log.i("thread","sendMessage.....");
+            }
+            public void handleMessage(Message msg) {
+                if(msg.what == msgWhat){
+                    List<HashMap<String, String>> retList = (List<HashMap<String, String>>) msg.obj;
+                    SimpleAdapter adapter = new SimpleAdapter(RateListActivity.this, retList, // listItems数据源
+                            R.layout.list_item, // ListItem的XML布局实现
+                            new String[] { "ItemTitle", "ItemDetail" },
+                            new int[] { R.id.itemTitle, R.id.itemDetail });
+                    setListAdapter(adapter);
+                    Log.i("handler","reset list...");
+                }
+                super.handleMessage(msg);
+            }
+            public class MyAdapter extends ArrayAdapter {
+
+                private static final String TAG = "MyAdapter";
+
+                public MyAdapter(Context context, int resource, ArrayList<HashMap<String,String>> list) {
+                    super(context, resource, list);
+                }
+
+                @NonNull
+                @Override
+                public View getView(int position, View convertView, ViewGroup parent) {
+                    View itemView = convertView;
+                    if(itemView == null){
+                        itemView = LayoutInflater.from(getContext()).inflate(R.layout.list_item,parent,false);
+                    }
+
+                    Map<String,String> map = (Map<String, String>) getItem(position);
+                    TextView title = (TextView) itemView.findViewById(R.id.itemTitle);
+                    TextView detail = (TextView) itemView.findViewById(R.id.itemDetail);
+
+                    title.setText("Title:" + map.get("ItemTitle"));
+                    detail.setText("detail:" + map.get("ItemDetail"));
+
+                    return itemView;
+                }
+            }
+            MyAdapter myAdapter = new MyAdapter(this,R.layout.list_item,listItems);
+            this.setListAdapter(myAdapter);
             URL url = null;
             Document doc = Jsoup.parse(html);
             Bundle bundle = new Bundle();
@@ -232,6 +319,11 @@ public class MainActivity extends AppCompatActivity {
         Handler handler;
         ListAdapter adapter = new ArrayAdapter<>(RateActivity.this,android.R.layout.simple_list_item_1,list_data);
         setListadapter(adapter);
+        private ArrayList<HashMap<String, String>> listItems; // 存放文字、图片信息
+        private SimpleAdapter listItemAdapter; // 适配器
+        private int msgWhat = 7;
+        initListView();
+        this.setListAdapter(listItemAdapter);
         //开启子线程
         handler = new Handler(){
             public void handleMessage(Message msg) {
