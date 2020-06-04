@@ -6,6 +6,8 @@ import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -13,6 +15,12 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
 
 public class MainActivity extends AppCompatActivity {
     private final String TAG = "Rate";
@@ -24,6 +32,7 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
         SharedPreferences sharedPreferences = getSharedPreferences("myrate", Activity.MODE_PRIVATE);
 
         dollarRate = sharedPreferences.getFloat("dollar_rate",0.0f);
@@ -69,6 +78,84 @@ public class MainActivity extends AppCompatActivity {
             show.setText(String.valueOf(r*wonRate));
         }
     }
+
+    public class RateActivity extends AppCompatActivity implements Runnable{
+        private String inputStream2String(InputStream inputStream) throws IOException {
+            final int bufferSize = 1024;
+            final char[] buffer = new char[bufferSize];
+            final StringBuilder out = new StringBuilder();
+            Reader in = new InputStreamReader(inputStream, "gb2312");
+            while (true) {
+                int rsz = in.read(buffer, 0, buffer.length);
+                if (rsz < 0)
+                    break;
+                out.append(buffer, 0, rsz);
+            }
+            return out.toString();
+        }
+
+        public void run() {
+            Log.i(TAG, "run: run()......");
+            URL url = null;
+            try {
+                url = new URL("http://www.usd-cny.com/icbc.htm");
+                HttpURLConnection http = (HttpURLConnection) url.openConnection();
+                InputStream in = http.getInputStream();
+
+                String html = inputStream2String(in);
+                Log.i(TAG, "run: html=" + html);
+
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            for(int i=1;i<3;i++){
+                Log.i(TAG, "run: i=" + i);
+                try {
+                    Thread.sleep(2000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+
+                }
+            }
+
+//获取Msg对象，用于返回主线程
+            Message msg = handler.obtainMessage(5);
+//msg.what = 5;
+            msg.obj = "Hello from run()";
+            handler.sendMessage(msg);
+        }
+        Handler handler;
+        //开启子线程
+        handler = new Handler(){
+            @Override
+            public void handleMessage(Message msg) {
+                if(msg.what==5){
+                    String str = (String) msg.obj;
+                    Log.i(TAG, "handleMessage: getMessage msg = " + str);
+                    show.setText(str);
+                }
+                super.handleMessage(msg);
+            }
+        }
+        Thread t = new Thread(this);
+        t.start();
+
+    };
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_welcome);
+
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                Intent mainIntent = new Intent(WelcomeActivity.this, MainActivity.class);
+                startActivity(mainIntent);
+                finish();
+            }
+        },3000);//3000毫秒后执行，即3秒跳转
+    }
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.rate,menu);
@@ -95,4 +182,5 @@ public class MainActivity extends AppCompatActivity {
 
         //startActivity(config);
         startActivityForResult(config,1);
+
     }}
