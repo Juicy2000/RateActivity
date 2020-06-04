@@ -5,6 +5,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -46,6 +48,20 @@ public class MainActivity extends AppCompatActivity {
         }else{
             show.setText(String.valueOf(r*wonRate));
         }
+    }
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.rate,menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if(item.getItemId()==R.id.menu_set){
+            //点击后的事件处理，可填入打开配置汇率页面的代码
+        }
+
+        return super.onOptionsItemSelected(item);
     }
     public void openOne(View btn){
         Intent config = new Intent(this,ConfigActivity.class);
